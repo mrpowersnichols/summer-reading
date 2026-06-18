@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Summer Reading · Nichols School · Mr. Powers</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0f1520;color:#f0e8d8;min-height:100vh}
+.app{max-width:900px;margin:0 auto;padding:1.5rem 1rem}
+h1{font-family:'Playfair Display',serif;font-size:2rem;font-weight:600;color:#f0e8d8;letter-spacing:-0.02em}
+h2{font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:400;color:#c9b99a;margin-bottom:1rem}
+h3{font-size:0.95rem;font-weight:500;color:#f0e8d8}
+.nav{display:flex;gap:4px;margin:1.5rem 0;border-bottom:1px solid #2a3245;padding-bottom:0}
+.nav-btn{background:none;border:none;color:#8a9ab5;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;padding:0.6rem 1.1rem;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color 0.15s}
+.nav-btn.active{color:#e8c47a;border-bottom-color:#e8c47a}
+.nav-btn:hover{color:#f0e8d8}
+.card{background:#1a2235;border:1px solid #2a3245;border-radius:12px;padding:1.25rem;margin-bottom:1rem;position:relative}
+.card-spine{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:12px 0 0 12px}
+.spine-absorbed{background:#4a9eff}
+.spine-pushing{background:#e8c47a}
+.spine-switching{background:#ff7c5c}
+.form-group{margin-bottom:1rem}
+label{display:block;font-size:0.8rem;font-weight:500;color:#8a9ab5;margin-bottom:0.35rem;text-transform:uppercase;letter-spacing:0.05em}
+input,textarea,select{width:100%;background:#0f1520;border:1px solid #2a3245;border-radius:8px;padding:0.65rem 0.85rem;color:#f0e8d8;font-family:'Inter',sans-serif;font-size:0.9rem;outline:none;transition:border-color 0.15s}
+input:focus,textarea:focus,select:focus{border-color:#e8c47a}
+textarea{resize:vertical;min-height:90px;line-height:1.6}
+select option{background:#1a2235}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:0.6rem 1.2rem;border-radius:8px;font-family:'Inter',sans-serif;font-size:0.85rem;font-weight:500;cursor:pointer;transition:all 0.15s;border:none}
+.btn-primary{background:#e8c47a;color:#0f1520}
+.btn-primary:hover{background:#f0d08a}
+.btn-primary:disabled{background:#3a4255;color:#5a6275;cursor:not-allowed}
+.btn-secondary{background:transparent;border:1px solid #2a3245;color:#8a9ab5}
+.btn-secondary:hover{border-color:#4a5265;color:#f0e8d8}
+.mood-pill{display:inline-flex;align-items:center;gap:5px;padding:0.3rem 0.75rem;border-radius:20px;font-size:0.78rem;font-weight:500}
+.mood-absorbed{background:#0c2a4a;color:#4a9eff}
+.mood-pushing{background:#2a2010;color:#e8c47a}
+.mood-switching{background:#2a1510;color:#ff7c5c}
+.wall-grid{display:flex;flex-direction:column;gap:0.75rem}
+.post-name{font-size:0.8rem;color:#8a9ab5;margin-bottom:2px}
+.post-book{font-size:1rem;font-weight:500;color:#f0e8d8;margin-bottom:4px}
+.post-vibe{font-size:0.9rem;color:#c9b99a;font-style:italic;margin-bottom:0.5rem;line-height:1.5}
+.post-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.post-date{font-size:0.75rem;color:#5a6275}
+.thread{display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1rem}
+.msg{padding:0.85rem 1rem;border-radius:10px;max-width:88%;font-size:0.9rem;line-height:1.6}
+.msg-student{background:#1a2235;border:1px solid #2a3245;align-self:flex-start;color:#c9b99a}
+.msg-teacher{background:#1a2e1a;border:1px solid #2a4235;align-self:flex-end;color:#a8d4a8}
+.msg-label{font-size:0.72rem;font-weight:500;color:#5a6275;margin-bottom:4px}
+.dash-row{display:flex;align-items:center;gap:10px;padding:0.7rem 0.5rem;border-bottom:1px solid #1a2235;cursor:pointer;transition:background 0.1s;border-radius:6px}
+.dash-row:hover{background:#1a2235}
+.dash-name{font-size:0.9rem;font-weight:500;flex:1;color:#f0e8d8}
+.dash-email{font-size:0.8rem;color:#5a6275;flex:1.5}
+.dash-date{font-size:0.78rem;color:#8a9ab5;flex:1}
+.status-badge{font-size:0.72rem;font-weight:500;padding:0.25rem 0.6rem;border-radius:20px;white-space:nowrap}
+.status-current{background:#0c2a1a;color:#4adb8a}
+.status-overdue{background:#2a1a0c;color:#e8a42a}
+.status-never{background:#2a1010;color:#ff7c5c}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.5rem}
+.stat{background:#1a2235;border:1px solid #2a3245;border-radius:10px;padding:1rem;text-align:center}
+.stat-n{font-size:1.6rem;font-weight:600;font-family:'Playfair Display',serif;color:#e8c47a}
+.stat-l{font-size:0.75rem;color:#8a9ab5;margin-top:2px}
+.lock{min-height:60vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1rem}
+.lock h2{font-family:'Playfair Display',serif;font-size:1.5rem;color:#c9b99a;text-align:center}
+.lock input{max-width:240px}
+.followup-box{background:#2a2010;border:1px solid #e8c47a33;border-radius:10px;padding:1rem;margin-bottom:1rem}
+.followup-label{font-size:0.78rem;color:#e8c47a;font-weight:500;margin-bottom:0.5rem}
+.spinner{width:18px;height:18px;border:2px solid #3a4255;border-top-color:#e8c47a;border-radius:50%;animation:spin 0.7s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;color:#5a6275;padding:3rem 1rem;font-style:italic}
+.header-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem}
+.tagline{font-size:0.85rem;color:#8a9ab5;margin-top:4px}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.dash-email{display:none}}
+</style>
+</head>
+<body>
+<div class="app" id="root">
+  <div class="header-row">
+    <div>
+      <h1>📚 Summer Reading</h1>
+      <div class="tagline">Nichols School · Rising 8th Grade · Mr. Powers</div>
+    </div>
+    <div id="teacher-status"></div>
+  </div>
+  <div class="nav" id="nav"></div>
+  <div id="main"></div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const TEACHER_PASS = 'powers2026';
+const ANTHROPIC_KEY = 'YOUR_API_KEY_HERE'; // Replace with your Anthropic API key
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+// Uses localStorage for persistence in standalone deployment
+const store = {
+  get(k){ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):null; }catch(e){return null;} },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){} }
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let state = {
+  tab: 'wall',
+  teacherLocked: true,
+  posts: store.get('sr_posts') || [],
+  journals: store.get('sr_journals') || {},
+  students: store.get('sr_students') || {},
+  followups: store.get('sr_followups') || {},
+  currentUser: store.get('sr_currentUser') || null,
+  viewingStudent: null
+};
+
+function save() {
+  store.set('sr_posts', state.posts);
+  store.set('sr_journals', state.journals);
+  store.set('sr_students', state.students);
+  store.set('sr_followups', state.followups);
+  if(state.currentUser) store.set('sr_currentUser', state.currentUser);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function fmt(iso) {
+  return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function daysSince(iso) {
+  return Math.floor((Date.now()-new Date(iso))/86400000);
+}
+function getStatus(email) {
+  const s=state.students[email];
+  if(!s||!s.lastCheckin) return 'never';
+  const d=daysSince(s.lastCheckin);
+  if(d<=32) return 'current';
+  if(d<=50) return 'overdue';
+  return 'never';
+}
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── CLAUDE API ────────────────────────────────────────────────────────────────
+async function callClaude(prompt, system) {
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-6',
+      max_tokens:300,
+      system: system||'You are a warm, curious middle school English teacher.',
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  const data=await resp.json();
+  return data.content?.[0]?.text||'';
+}
+
+// ── WALL ──────────────────────────────────────────────────────────────────────
+function renderWall() {
+  const sorted=[...state.posts].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">
+    <h2 style="margin:0">What we're reading</h2>
+    <button class="btn btn-primary" onclick="setTab('checkin')">Post an update</button>
+  </div>
+  <div class="wall-grid">
+    ${sorted.length?sorted.map(p=>`
+      <div class="card" style="padding-left:1.5rem">
+        <div class="card-spine ${p.mood==='absorbed'?'spine-absorbed':p.mood==='pushing'?'spine-pushing':'spine-switching'}"></div>
+        <div class="post-name">${esc(p.name)}</div>
+        <div class="post-book">${esc(p.book)}</div>
+        <div class="post-vibe">"${esc(p.vibe)}"</div>
+        <div class="post-meta">
+          <span class="mood-pill ${p.mood==='absorbed'?'mood-absorbed':p.mood==='pushing'?'mood-pushing':'mood-switching'}">
+            ${p.mood==='absorbed'?'📖 Absorbed':p.mood==='pushing'?'😐 Pushing through':'🔄 About to switch'}
+          </span>
+          <span class="post-date">${fmt(p.date)}</span>
+        </div>
+      </div>`).join(''):'<div class="empty">No posts yet — be the first to share what you\'re reading.</div>'}
+  </div>`;
+}
+
+// ── CHECK-IN ──────────────────────────────────────────────────────────────────
+function renderCheckin() {
+  const fu=state.currentUser?state.followups[state.currentUser.email]:null;
+  return `
+  <h2>Post an update</h2>
+  ${!state.currentUser?`
+  <div class="card">
+    <p style="color:#8a9ab5;font-size:0.85rem;margin-bottom:1rem">Your name appears on the reading wall. Your email is just for Mr. Powers.</p>
+    <div class="form-group"><label>First name + last initial</label><input id="fi-name" placeholder="e.g. Jordan K."></div>
+    <div class="form-group"><label>School email</label><input id="fi-email" type="email" placeholder="you@nicholsschool.org"></div>
+    <button class="btn btn-primary" onclick="signIn()">Continue</button>
+  </div>`:`
+  <div style="margin-bottom:1rem;font-size:0.85rem;color:#8a9ab5">
+    Signed in as <strong style="color:#e8c47a">${esc(state.currentUser.name)}</strong> ·
+    <a href="#" onclick="signOut();return false;" style="color:#5a6275">switch</a>
+  </div>
+  ${fu&&!fu.answered?`
+  <div class="followup-box">
+    <div class="followup-label">⚡ Answer this before your next update</div>
+    <div style="font-size:0.9rem;color:#f0e8d8;margin-bottom:0.75rem">${esc(fu.question)}</div>
+    <div class="form-group"><textarea id="fu-answer" placeholder="Your answer — be specific!"></textarea></div>
+    <button class="btn btn-primary" onclick="submitFollowup()">Submit answer</button>
+  </div>`:`
+  <div class="card">
+    <div class="form-group"><label>Book title &amp; author</label><input id="ci-book" placeholder="e.g. The House on Mango Street by Sandra Cisneros"></div>
+    <div class="form-group"><label>One sentence — what's the vibe?</label><textarea id="ci-vibe" style="min-height:60px" placeholder="Describe a feeling or image from what you just read..."></textarea></div>
+    <div class="form-group"><label>Where are you in the book?</label><input id="ci-page" placeholder="e.g. Chapter 4, page 67"></div>
+    <div class="form-group">
+      <label>Reading mood</label>
+      <select id="ci-mood">
+        <option value="absorbed">📖 Absorbed — totally into it</option>
+        <option value="pushing">😐 Pushing through — it's okay</option>
+        <option value="switching">🔄 About to switch — not working for me</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="ci-submit" onclick="submitCheckin()">Post to the wall</button>
+  </div>`}
+  `;}
+
+// ── JOURNAL ───────────────────────────────────────────────────────────────────
+function renderJournal() {
+  if(!state.currentUser) return `
+  <h2>My reading journal</h2>
+  <div class="card" style="text-align:center;padding:2rem">
+    <p style="color:#8a9ab5;margin-bottom:1rem">Sign in first via the Check-in tab.</p>
+    <button class="btn btn-primary" onclick="setTab('checkin')">Go to check-in</button>
+  </div>`;
+  const thread=state.journals[state.currentUser.email]||[];
+  return `
+  <h2>My reading journal</h2>
+  <div class="card">
+    <p style="font-size:0.82rem;color:#8a9ab5;margin-bottom:1rem">Private — only you and Mr. Powers can see this.</p>
+    <div class="thread">
+      ${thread.length?thread.map(m=>`
+        <div>
+          <div class="msg-label">${m.role==='student'?esc(state.currentUser.name):'Mr. Powers'} · ${fmt(m.date)}</div>
+          <div class="msg ${m.role==='student'?'msg-student':'msg-teacher'}">${esc(m.text)}</div>
+        </div>`).join(''):'<div class="empty" style="padding:1rem 0">Your conversation with Mr. Powers will appear here.</div>'}
+    </div>
+    <div class="form-group" style="margin-top:1rem"><label>Write to Mr. Powers</label><textarea id="jnl-msg" placeholder="Share a question, a reaction, something you noticed..."></textarea></div>
+    <button class="btn btn-primary" id="jnl-send" onclick="sendJournal()">Send message</button>
+  </div>`;}
+
+// ── TEACHER DASHBOARD ─────────────────────────────────────────────────────────
+function renderTeacher() {
+  if(state.teacherLocked) return `
+  <div class="lock">
+    <h2>Teacher dashboard</h2>
+    <div class="form-group" style="width:100%;max-width:280px">
+      <label>Password</label>
+      <input type="password" id="t-pass" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPass()">
+    </div>
+    <button class="btn btn-primary" onclick="checkPass()">Sign in</button>
+    <div id="pass-err" style="color:#ff7c5c;font-size:0.82rem;display:none">Incorrect password</div>
+  </div>`;
+
+  if(state.viewingStudent) return renderStudentView();
+
+  const emails=Object.keys(state.students);
+  const currentCount=emails.filter(e=>getStatus(e)==='current').length;
+  const overdueCount=emails.filter(e=>getStatus(e)==='overdue').length;
+  const pendingFu=Object.values(state.followups).filter(f=>!f.answered).length;
+
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+    <h2 style="margin:0">Teacher dashboard</h2>
+    <button class="btn btn-secondary" onclick="exportCSV()">Export CSV</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-n">${emails.length}</div><div class="stat-l">Students</div></div>
+    <div class="stat"><div class="stat-n" style="color:#4adb8a">${currentCount}</div><div class="stat-l">Current</div></div>
+    <div class="stat"><div class="stat-n" style="color:#e8a42a">${overdueCount}</div><div class="stat-l">Overdue</div></div>
+    <div class="stat"><div class="stat-n" style="color:#ff7c5c">${pendingFu}</div><div class="stat-l">Pending Q&amp;A</div></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;gap:8px;font-size:0.75rem;color:#5a6275;padding-bottom:0.5rem;border-bottom:1px solid #1a2235;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">
+      <span style="flex:1">Name</span><span style="flex:1.5">Email</span><span style="flex:1">Last check-in</span><span style="width:90px;text-align:right">Status</span>
+    </div>
+    ${emails.length?emails.sort((a,b)=>{const o={never:0,overdue:1,current:2};return o[getStatus(a)]-o[getStatus(b)];}).map(email=>{
+      const s=state.students[email];
+      const status=getStatus(email);
+      return `<div class="dash-row" onclick="viewStudent('${esc(email)}')">
+        <span class="dash-name">${esc(s.name)}</span>
+        <span class="dash-email">${esc(email)}</span>
+        <span class="dash-date">${s.lastCheckin?fmt(s.lastCheckin):'—'}</span>
+        <span class="status-badge status-${status}">${status==='current'?'✓ Current':status==='overdue'?'⚠ Overdue':'✗ Never'}</span>
+      </div>`;}).join(''):'<div class="empty">No students yet.</div>'}
+  </div>`;}
+
+function renderStudentView() {
+  const email=state.viewingStudent;
+  const s=state.students[email];
+  const thread=state.journals[email]||[];
+  const posts=state.posts.filter(p=>p.email===email);
+  const fu=state.followups[email];
+  return `
+  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem">
+    <button class="btn btn-secondary" onclick="state.viewingStudent=null;render()">← Back</button>
+    <div><h3>${esc(s.name)}</h3><div style="font-size:0.8rem;color:#8a9ab5">${esc(email)}</div></div>
+  </div>
+  <div class="card" style="margin-bottom:1rem">
+    <h3 style="margin-bottom:0.75rem;color:#8a9ab5;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em">Wall posts</h3>
+    ${posts.length?posts.map(p=>`
+      <div style="padding:0.6rem 0;border-bottom:1px solid #1a2235">
+        <div style="font-size:0.85rem;font-weight:500">${esc(p.book)}</div>
+        <div style="font-size:0.82rem;color:#8a9ab5;font-style:italic">"${esc(p.vibe)}"</div>
+        <div style="font-size:0.75rem;color:#5a6275;margin-top:2px">${fmt(p.date)} · ${esc(p.page||'page not noted')} · ${p.mood}</div>
+      </div>`).join(''):'<div style="color:#5a6275;font-size:0.85rem">No posts yet.</div>'}
+  </div>
+  ${fu?`<div class="card" style="margin-bottom:1rem">
+    <h3 style="margin-bottom:0.75rem;color:#8a9ab5;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em">Follow-up question</h3>
+    <div style="font-size:0.88rem;color:#e8c47a;margin-bottom:0.5rem">${esc(fu.question)}</div>
+    ${fu.answered?`<div style="font-size:0.88rem;color:#c9b99a;background:#0f1520;padding:0.65rem;border-radius:8px">${esc(fu.answer)}</div>`:'<div style="font-size:0.82rem;color:#ff7c5c">Not yet answered</div>'}
+  </div>`:''}
+  <div class="card">
+    <h3 style="margin-bottom:0.75rem;color:#8a9ab5;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em">Journal thread</h3>
+    <div class="thread">
+      ${thread.length?thread.map(m=>`
+        <div>
+          <div class="msg-label">${m.role==='student'?esc(s.name):'You'} · ${fmt(m.date)}</div>
+          <div class="msg ${m.role==='student'?'msg-student':'msg-teacher'}">${esc(m.text)}</div>
+        </div>`).join(''):'<div style="color:#5a6275;font-size:0.85rem">No messages yet.</div>'}
+    </div>
+    <div class="form-group" style="margin-top:1rem"><label>Reply to ${esc(s.name)}</label><textarea id="t-reply" placeholder="Write a personal response..."></textarea></div>
+    <button class="btn btn-primary" onclick="teacherReply('${esc(email)}')">Send reply</button>
+  </div>`;}
+
+// ── ACTIONS ───────────────────────────────────────────────────────────────────
+function signIn() {
+  const name=document.getElementById('fi-name')?.value.trim();
+  const email=document.getElementById('fi-email')?.value.trim().toLowerCase();
+  if(!name||!email||!email.includes('@')){alert('Please enter your name and a valid email.');return;}
+  state.currentUser={name,email};
+  if(!state.students[email]) state.students[email]={name,email,lastCheckin:null};
+  save(); render();
+}
+function signOut(){state.currentUser=null;store.set('sr_currentUser',null);render();}
+
+async function submitCheckin() {
+  const book=document.getElementById('ci-book')?.value.trim();
+  const vibe=document.getElementById('ci-vibe')?.value.trim();
+  const page=document.getElementById('ci-page')?.value.trim();
+  const mood=document.getElementById('ci-mood')?.value;
+  if(!book||!vibe){alert('Please fill in the book and vibe fields.');return;}
+  if(vibe.split(' ').length<4){alert('Give us a real sentence about the vibe!');return;}
+  const btn=document.getElementById('ci-submit');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Posting...';}
+  const post={id:Date.now().toString(),email:state.currentUser.email,name:state.currentUser.name,book,vibe,page,mood,date:new Date().toISOString()};
+  state.posts.push(post);
+  state.students[state.currentUser.email].lastCheckin=post.date;
+  save();
+  try {
+    const q=await callClaude(
+      `A rising 8th grader posted:\nBook: ${book}\nVibe: "${vibe}"\nMood: ${mood}\nLocation: ${page}\n\nWrite ONE specific follow-up question (1-2 sentences) that only someone who actually read this section could answer. Be curious and personal, not quiz-like. Just the question, no preamble.`,
+      'You are a warm middle school English teacher generating genuine follow-up questions.'
+    );
+    state.followups[state.currentUser.email]={question:q.trim(),answered:false,answer:null,postId:post.id};
+    save();
+  } catch(e){ console.warn('Follow-up Q generation failed',e); }
+  setTab('wall');
+}
+
+async function submitFollowup() {
+  const ans=document.getElementById('fu-answer')?.value.trim();
+  if(!ans||ans.length<15){alert('Please write a real answer — at least a sentence or two.');return;}
+  state.followups[state.currentUser.email].answered=true;
+  state.followups[state.currentUser.email].answer=ans;
+  save(); render();
+}
+
+async function sendJournal() {
+  const txt=document.getElementById('jnl-msg')?.value.trim();
+  if(!txt) return;
+  const btn=document.getElementById('jnl-send');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Sending...';}
+  const email=state.currentUser.email;
+  if(!state.journals[email]) state.journals[email]=[];
+  state.journals[email].push({role:'student',text:txt,date:new Date().toISOString()});
+  save(); render();
+}
+
+function teacherReply(email) {
+  const txt=document.getElementById('t-reply')?.value.trim();
+  if(!txt) return;
+  if(!state.journals[email]) state.journals[email]=[];
+  state.journals[email].push({role:'teacher',text:txt,date:new Date().toISOString()});
+  save(); render();
+}
+
+function checkPass() {
+  const v=document.getElementById('t-pass')?.value;
+  if(v===TEACHER_PASS){state.teacherLocked=false;render();}
+  else{const e=document.getElementById('pass-err');if(e)e.style.display='block';}
+}
+function viewStudent(email){state.viewingStudent=email;render();}
+
+function exportCSV() {
+  const rows=[['Name','Email','Last Check-in','Status','Posts','Follow-up answered']];
+  Object.keys(state.students).forEach(email=>{
+    const s=state.students[email];
+    const posts=state.posts.filter(p=>p.email===email).length;
+    const fu=state.followups[email];
+    rows.push([s.name,email,s.lastCheckin?fmt(s.lastCheckin):'Never',getStatus(email),posts,fu?fu.answered?'Yes':'No':'N/A']);
+  });
+  const csv=rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='summer_reading_tracker.csv';
+  a.click();
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+const TABS=[
+  {id:'wall',label:'Reading Wall'},
+  {id:'checkin',label:'Check-in'},
+  {id:'journal',label:'My Journal'},
+  {id:'teacher',label:'Teacher'}
+];
+function setTab(id){state.tab=id;state.viewingStudent=null;render();}
+function render() {
+  document.getElementById('nav').innerHTML=TABS.map(t=>`<button class="nav-btn ${state.tab===t.id?'active':''}" onclick="setTab('${t.id}')">${t.label}</button>`).join('');
+  document.getElementById('teacher-status').innerHTML=!state.teacherLocked?'<span style="font-size:0.78rem;color:#4adb8a">● Teacher mode</span>':'';
+  const main=document.getElementById('main');
+  switch(state.tab){
+    case 'wall': main.innerHTML=renderWall(); break;
+    case 'checkin': main.innerHTML=renderCheckin(); break;
+    case 'journal': main.innerHTML=renderJournal(); break;
+    case 'teacher': main.innerHTML=renderTeacher(); break;
+  }
+}
+render();
+</script>
+</body>
+</html>
