@@ -125,8 +125,21 @@ const state = {
   currentUser: JSON.parse(localStorage.getItem('sr_user')||'null'),
   posts:[], students:{}, journals:{}, followups:{},
   pendingFollowup: null,
-  journalDue: false
+  journalDue: false,
+  hasUnreadReply: false
 };
+
+async function checkUnreadReply(email){
+  if(!email) return;
+  const key=emailKey(email);
+  const snap=await get(ref(db,'students/'+key));
+  const lastRead=snap.exists()?(snap.val().lastJournalRead||0):0;
+  const jSnap=await get(ref(db,'journals/'+key));
+  if(!jSnap.exists()){ state.hasUnreadReply=false; return; }
+  const msgs=Object.values(jSnap.val());
+  const hasNew=msgs.some(m=>m.role==='teacher'&&new Date(m.date).getTime()>lastRead);
+  state.hasUnreadReply=hasNew;
+}
 
 function startListeners(){
   onValue(ref(db,'posts'), snap=>{
@@ -142,7 +155,10 @@ function startListeners(){
   });
   onValue(ref(db,'journals'), snap=>{
     state.journals=snap.val()||{};
-    if(state.tab==='journal'||state.viewingStudent) renderMain();
+    // Re-check unread replies when journal data updates
+    if(state.currentUser&&state.tab!=='journal'){
+      checkUnreadReply(state.currentUser.email).then(()=>renderMain());
+    } else if(state.tab==='journal'||state.viewingStudent) renderMain();
   });
   onValue(ref(db,'followups'), snap=>{
     state.followups=snap.val()||{};
@@ -198,13 +214,19 @@ function renderWall(){
       }).join('')
     : '<div class="empty">No posts yet — be the first to share what you\'re reading.</div>';
 
+  const replyBanner=state.hasUnreadReply&&state.currentUser
+    ? '<div style="background:#1a2235;border:2px solid #4a9eff;border-radius:12px;padding:1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">'
+      +'<div style="font-size:0.88rem;color:#a8d4ff;line-height:1.5"><strong style="color:#4a9eff">💬 Mr. Powers replied to your journal</strong><br>You have a new message waiting.</div>'
+      +'<button class="btn" style="background:#4a9eff;color:#0f1520" onclick="setTab(\'journal\')">Read reply</button>'
+      +'</div>'
+    : '';
   const journalNudge=state.journalDue
     ? '<div style="background:#1a2e1a;border:2px solid #4adb8a;border-radius:12px;padding:1rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">'
       +'<div style="font-size:0.88rem;color:#a8d4a8;line-height:1.5"><strong style="color:#4adb8a">✏️ Journal entry due</strong><br>You\'ve done two check-ins — write a few sentences to Mr. Powers.</div>'
       +'<button class="btn btn-primary" style="background:#4adb8a;color:#0f1520" onclick="setTab(\'journal\')">Write journal entry</button>'
       +'</div>'
     : '';
-  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">'    +'<h2 style="margin:0">What we\'re reading</h2>'    +'<button class="btn btn-primary" onclick="setTab(\'checkin\')">Post an update</button>'    +'</div>'    +journalNudge    +followupCard    +'<div class="wall-grid">'+cards+'</div>';
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">'    +'<h2 style="margin:0">What we\'re reading</h2>'    +'<button class="btn btn-primary" onclick="setTab(\'checkin\')">Post an update</button>'    +'</div>'    +replyBanner    +journalNudge    +followupCard    +'<div class="wall-grid">'+cards+'</div>';
 }
 
 function renderCheckin(){
@@ -259,6 +281,11 @@ function renderJournal(){
       +'</div>';
   }
   const key=emailKey(state.currentUser.email);
+  // Mark teacher replies as read
+  if(state.hasUnreadReply){
+    state.hasUnreadReply=false;
+    dbUpdate('students/'+key,{lastJournalRead:Date.now()});
+  }
   const dueBanner=state.journalDue
     ? '<div style="background:#1a2e1a;border:2px solid #4adb8a;border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:0.88rem;color:#a8d4a8;line-height:1.6">'
       +'<strong style="color:#4adb8a">✏️ Journal entry due!</strong> You\'ve done two check-ins since your last journal entry. Write a few sentences to Mr. Powers below before your next check-in.'
@@ -414,6 +441,8 @@ window._signIn = async function(){
     const sData=snap.val();
     state.journalDue = sData.journalDue||false;
   }
+  // Check for unread teacher replies
+  await checkUnreadReply(email);
   render();
 };
 
