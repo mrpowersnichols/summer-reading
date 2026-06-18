@@ -71,6 +71,7 @@ select option{background:#1a2235}
 .empty{text-align:center;color:#5a6275;padding:3rem 1rem;font-style:italic}
 .header-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.75rem}
 .tagline{font-size:0.85rem;color:#8a9ab5;margin-top:4px}
+.starter-btn{background:#1a2235;border:1px solid #2a3245;border-radius:20px;color:#8a9ab5;font-family:'Inter',sans-serif;font-size:0.75rem;padding:0.35rem 0.75rem;cursor:pointer;transition:all 0.15s;text-align:left;line-height:1.4}.starter-btn:hover{border-color:#e8c47a;color:#e8c47a;background:#2a2010}
 @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.dash-email{display:none}}
 </style>
 </head>
@@ -123,7 +124,8 @@ const state = {
   tab:'wall', teacherLocked:true, viewingStudent:null,
   currentUser: JSON.parse(localStorage.getItem('sr_user')||'null'),
   posts:[], students:{}, journals:{}, followups:{},
-  pendingFollowup: null
+  pendingFollowup: null,
+  journalDue: false
 };
 
 function startListeners(){
@@ -196,12 +198,13 @@ function renderWall(){
       }).join('')
     : '<div class="empty">No posts yet — be the first to share what you\'re reading.</div>';
 
-  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">'
-    +'<h2 style="margin:0">What we\'re reading</h2>'
-    +'<button class="btn btn-primary" onclick="setTab(\'checkin\')">Post an update</button>'
-    +'</div>'
-    +followupCard
-    +'<div class="wall-grid">'+cards+'</div>';
+  const journalNudge=state.journalDue&&!state.pendingFollowup
+    ? '<div style="background:#1a2e1a;border:2px solid #4adb8a;border-radius:12px;padding:1rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">'
+      +'<div style="font-size:0.88rem;color:#a8d4a8;line-height:1.5"><strong style="color:#4adb8a">✏️ Journal entry due</strong><br>You\'ve done two check-ins — write a few sentences to Mr. Powers.</div>'
+      +'<button class="btn btn-primary" style="background:#4adb8a;color:#0f1520" onclick="setTab(\'journal\')">Write journal entry</button>'
+      +'</div>'
+    : '';
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">'    +'<h2 style="margin:0">What we\'re reading</h2>'    +'<button class="btn btn-primary" onclick="setTab(\'checkin\')">Post an update</button>'    +'</div>'    +followupCard    +journalNudge    +'<div class="wall-grid">'+cards+'</div>';
 }
 
 function renderCheckin(){
@@ -256,16 +259,33 @@ function renderJournal(){
       +'</div>';
   }
   const key=emailKey(state.currentUser.email);
+  const dueBanner=state.journalDue
+    ? '<div style="background:#1a2e1a;border:2px solid #4adb8a;border-radius:10px;padding:1rem;margin-bottom:1rem;font-size:0.88rem;color:#a8d4a8;line-height:1.6">'
+      +'<strong style="color:#4adb8a">✏️ Journal entry due!</strong> You\'ve done two check-ins since your last journal entry. Write a few sentences to Mr. Powers below before your next check-in.'
+      +'</div>'
+    : '';
   const msgs=state.journals[key]?Object.values(state.journals[key]).sort((a,b)=>new Date(a.date)-new Date(b.date)):[];
   const thread=msgs.length
     ? msgs.map(m=>'<div><div class="msg-label">'+(m.role==='student'?esc(state.currentUser.name):'Mr. Powers')+' · '+fmt(m.date)+'</div>'
         +'<div class="msg '+(m.role==='student'?'msg-student':'msg-teacher')+'">'+esc(m.text)+'</div></div>').join('')
     : '<div class="empty" style="padding:1rem 0">Your conversation with Mr. Powers will appear here.</div>';
   return '<h2>My reading journal</h2>'
+    +dueBanner
     +'<div class="card">'
     +'<p style="font-size:0.82rem;color:#8a9ab5;margin-bottom:1rem">Private — only you and Mr. Powers can see this.</p>'
     +'<div class="thread">'+thread+'</div>'
     +'<div class="form-group" style="margin-top:1rem"><label>Write to Mr. Powers</label>'
+    +'<div style="margin-bottom:0.6rem">'
+    +'<div style="font-size:0.78rem;color:#5a6275;margin-bottom:0.4rem;font-style:italic">Not sure what to write? Tap a starter:</div>'
+    +'<div style="display:flex;flex-wrap:wrap;gap:6px">'
+    +'<button class="starter-btn" onclick="window._useStarter(this)">Something this book made me think about outside of reading is…</button>'
+    +'<button class="starter-btn" onclick="window._useStarter(this)">A question I keep coming back to is…</button>'
+    +'<button class="starter-btn" onclick="window._useStarter(this)">The character I\'m most interested in right now is… because…</button>'
+    +'<button class="starter-btn" onclick="window._useStarter(this)">I\'m surprised that I liked / didn\'t like this book because…</button>'
+    +'<button class="starter-btn" onclick="window._useStarter(this)">Something I want to remember from this section is…</button>'
+    +'<button class="starter-btn" onclick="window._useStarter(this)">This book reminds me of… because…</button>'
+    +'<button class="starter-btn" onclick="window._useStarter(this)">If I could change one thing about the story so far, I would…</button>'
+    +'</div></div>'
     +'<textarea id="jnl-msg" placeholder="Share a question, a reaction, something you noticed..."></textarea></div>'
     +'<button class="btn btn-primary" id="jnl-send" onclick="window._sendJournal()">Send message</button>'
     +'</div>';
@@ -415,9 +435,15 @@ window._submitCheckin = async function(){
   if(q){
     const fuData={question:q.trim(),answered:false,answer:null,postDate:post.date};
     await dbSet('followups/'+emailKey(state.currentUser.email),fuData);
-    // Only set pendingFollowup after confirmed Firebase write
     state.pendingFollowup={question:q.trim(),email:state.currentUser.email};
   }
+  // Check if journal entry is due (every 2 posts)
+  const studentPosts=state.posts.filter(p=>p.email===state.currentUser.email).length+1;
+  const journalKey=emailKey(state.currentUser.email);
+  const journalMsgs=state.journals[journalKey]?Object.values(state.journals[journalKey]):[];
+  const lastJournalDate=journalMsgs.length?Math.max(...journalMsgs.map(m=>new Date(m.date).getTime())):0;
+  const postsSinceJournal=state.posts.filter(p=>p.email===state.currentUser.email&&new Date(p.date).getTime()>lastJournalDate).length;
+  state.journalDue = postsSinceJournal>=1 && studentPosts%2===0;
   setTab('wall');
 };
 
@@ -455,12 +481,31 @@ window._dismissFollowup = function(){
   render();
 };
 
+window._useStarter = function(btn){
+  const ta=document.getElementById('jnl-msg');
+  if(!ta) return;
+  const text=btn.textContent.trim();
+  // If textarea is empty or ends with whitespace, set; otherwise append on new line
+  if(!ta.value.trim()){
+    ta.value=text+' ';
+  } else {
+    ta.value=ta.value.trimEnd()+'\n\n'+text+' ';
+  }
+  ta.focus();
+  ta.setSelectionRange(ta.value.length,ta.value.length);
+  // Visually mark the starter as used
+  btn.style.borderColor='#e8c47a';
+  btn.style.color='#e8c47a';
+  btn.style.background='#2a2010';
+};
+
 window._sendJournal = async function(){
   const txt=document.getElementById('jnl-msg')?.value.trim();
   if(!txt) return;
   const btn=document.getElementById('jnl-send');
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Sending...'; }
   await dbPush('journals/'+emailKey(state.currentUser.email),{role:'student',text:txt,date:new Date().toISOString()});
+  state.journalDue=false;
   render();
 };
 
