@@ -198,13 +198,13 @@ function renderWall(){
       }).join('')
     : '<div class="empty">No posts yet — be the first to share what you\'re reading.</div>';
 
-  const journalNudge=state.journalDue&&!state.pendingFollowup
+  const journalNudge=state.journalDue
     ? '<div style="background:#1a2e1a;border:2px solid #4adb8a;border-radius:12px;padding:1rem;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem">'
       +'<div style="font-size:0.88rem;color:#a8d4a8;line-height:1.5"><strong style="color:#4adb8a">✏️ Journal entry due</strong><br>You\'ve done two check-ins — write a few sentences to Mr. Powers.</div>'
       +'<button class="btn btn-primary" style="background:#4adb8a;color:#0f1520" onclick="setTab(\'journal\')">Write journal entry</button>'
       +'</div>'
     : '';
-  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">'    +'<h2 style="margin:0">What we\'re reading</h2>'    +'<button class="btn btn-primary" onclick="setTab(\'checkin\')">Post an update</button>'    +'</div>'    +followupCard    +journalNudge    +'<div class="wall-grid">'+cards+'</div>';
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.5rem">'    +'<h2 style="margin:0">What we\'re reading</h2>'    +'<button class="btn btn-primary" onclick="setTab(\'checkin\')">Post an update</button>'    +'</div>'    +journalNudge    +followupCard    +'<div class="wall-grid">'+cards+'</div>';
 }
 
 function renderCheckin(){
@@ -407,7 +407,13 @@ window._signIn = async function(){
   localStorage.setItem('sr_user',JSON.stringify(state.currentUser));
   const key=emailKey(email);
   const snap=await get(ref(db,'students/'+key));
-  if(!snap.exists()) await dbSet('students/'+key,{name,lastCheckin:null,roster:false});
+  if(!snap.exists()){
+    await dbSet('students/'+key,{name,lastCheckin:null,roster:false,journalDue:false});
+  } else {
+    // Restore journalDue state from Firebase
+    const sData=snap.val();
+    state.journalDue = sData.journalDue||false;
+  }
   render();
 };
 
@@ -438,12 +444,17 @@ window._submitCheckin = async function(){
     state.pendingFollowup={question:q.trim(),email:state.currentUser.email};
   }
   // Check if journal entry is due (every 2 posts)
-  const studentPosts=state.posts.filter(p=>p.email===state.currentUser.email).length+1;
+  const allStudentPosts=state.posts.filter(p=>p.email===state.currentUser.email);
+  const studentPostCount=allStudentPosts.length+1;
   const journalKey=emailKey(state.currentUser.email);
   const journalMsgs=state.journals[journalKey]?Object.values(state.journals[journalKey]):[];
-  const lastJournalDate=journalMsgs.length?Math.max(...journalMsgs.map(m=>new Date(m.date).getTime())):0;
-  const postsSinceJournal=state.posts.filter(p=>p.email===state.currentUser.email&&new Date(p.date).getTime()>lastJournalDate).length;
-  state.journalDue = postsSinceJournal>=1 && studentPosts%2===0;
+  const studentJournalMsgs=journalMsgs.filter(m=>m.role==='student');
+  const lastJournalDate=studentJournalMsgs.length?Math.max(...studentJournalMsgs.map(m=>new Date(m.date).getTime())):0;
+  const postsSinceJournal=allStudentPosts.filter(p=>new Date(p.date).getTime()>lastJournalDate).length+1;
+  const isDue = postsSinceJournal>=2;
+  state.journalDue = isDue;
+  // Persist journalDue to Firebase so it shows on next visit
+  await dbUpdate('students/'+journalKey,{journalDue:isDue});
   setTab('wall');
 };
 
@@ -506,6 +517,7 @@ window._sendJournal = async function(){
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Sending...'; }
   await dbPush('journals/'+emailKey(state.currentUser.email),{role:'student',text:txt,date:new Date().toISOString()});
   state.journalDue=false;
+  await dbUpdate('students/'+emailKey(state.currentUser.email),{journalDue:false});
   render();
 };
 
