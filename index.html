@@ -173,7 +173,7 @@ function renderWall(){
           +'<div class="card-spine '+spineClass+'"></div>'
           +'<div class="post-name">'+esc(p.name)+'</div>'
           +'<div class="post-book">'+esc(p.book)+'</div>'
-          +'<div class="post-vibe">"'+esc(p.vibe)+'"</div>'
+          +'<div class="post-vibe">'+esc(p.vibe)+'"</div>'
           +'<div class="post-meta">'
           +'<span class="mood-pill '+pillClass+'">'+pillLabel+'</span>'
           +'<span class="post-date">'+fmt(p.date)+'</span>'
@@ -210,9 +210,12 @@ function renderCheckin(){
       +'</div>';
   } else {
     body='<div class="card">'
-      +'<div class="form-group"><label>Book title &amp; author</label><input id="ci-book" placeholder="e.g. The House on Mango Street by Sandra Cisneros"></div>'
-      +'<div class="form-group"><label>One sentence — what\'s the vibe?</label><textarea id="ci-vibe" style="min-height:60px" placeholder="Describe a feeling or image from what you just read..."></textarea></div>'
-      +'<div class="form-group"><label>Where are you in the book?</label><input id="ci-page" placeholder="e.g. Chapter 4, page 67"></div>'
+      +'<div class="form-group"><label>Book title</label><input id="ci-book" placeholder="e.g. The House on Mango Street"></div>'
+      +'<div class="form-group"><label>Author</label><input id="ci-author" placeholder="e.g. Sandra Cisneros"></div>'
+      +'<div class="form-group">'      +'<label>Your reading response</label>'      +'<div style="background:#0f1520;border:1px solid #2a3245;border-radius:8px;padding:0.65rem 0.85rem;margin-bottom:0.5rem;font-size:0.8rem;color:#8a9ab5;line-height:1.9">'      +'Write 4–5 sentences covering:<br>'      +'<span style="color:#e8c47a">✔</span> What\'s happening in the book right now<br>'      +'<span style="color:#e8c47a">✔</span> Something you <strong style="color:#f0e8d8">liked</strong><br>'      +'<span style="color:#e8c47a">✔</span> Something you <strong style="color:#f0e8d8">aren\'t sure about</strong> or found confusing<br>'      +'<span style="color:#e8c47a">✔</span> Something that <strong style="color:#f0e8d8">surprised</strong> you<br>'      +'<span style="color:#e8c47a">✔</span> How you\'re feeling about the book overall'      +'</div>'      +'<textarea id="ci-vibe" style="min-height:130px" placeholder="Write your response here..."></textarea>'      +'</div>'      +'<div style="display:flex;gap:12px">'
+      +'<div class="form-group" style="flex:1"><label>Start page</label><input id="ci-page-start" type="number" min="1" placeholder="e.g. 45"></div>'
+      +'<div class="form-group" style="flex:1"><label>End page</label><input id="ci-page-end" type="number" min="1" placeholder="e.g. 112"></div>'
+      +'</div>'
       +'<div class="form-group"><label>Reading mood</label>'
       +'<select id="ci-mood">'
       +'<option value="absorbed">📖 Absorbed — totally into it</option>'
@@ -325,7 +328,7 @@ function renderStudentView(){
     ? posts.map(p=>'<div style="padding:0.65rem 0;border-bottom:1px solid #1a2235">'
         +'<div style="font-size:0.85rem;font-weight:500">'+esc(p.book)+'</div>'
         +'<div style="font-size:0.82rem;color:#8a9ab5;font-style:italic;margin:2px 0">"'+esc(p.vibe)+'"</div>'
-        +'<div style="font-size:0.75rem;color:#5a6275">'+fmt(p.date)+' · '+esc(p.page||'page not noted')+' · '+p.mood+'</div>'
+        +'<div style="font-size:0.75rem;color:#5a6275">'+fmt(p.date)+' · by '+esc(p.author||'unknown')+' · pp. '+(p.pageStart||'?')+'-'+(p.pageEnd||'?')+' ('+(p.pagesRead||0)+' pages)'+' · '+p.mood+'</div>'
         +'</div>').join('')
     : '<div style="color:#5a6275;font-size:0.85rem;padding:0.5rem 0">No posts yet.</div>';
   const threadRows=msgs.length
@@ -375,20 +378,23 @@ window._signOut = function(){ state.currentUser=null; localStorage.removeItem('s
 
 window._submitCheckin = async function(){
   const book=document.getElementById('ci-book')?.value.trim();
+  const author=document.getElementById('ci-author')?.value.trim();
   const vibe=document.getElementById('ci-vibe')?.value.trim();
-  const page=document.getElementById('ci-page')?.value.trim();
+  const pageStart=parseInt(document.getElementById('ci-page-start')?.value)||0;
+  const pageEnd=parseInt(document.getElementById('ci-page-end')?.value)||0;
   const mood=document.getElementById('ci-mood')?.value;
-  if(!book||!vibe){ alert('Please fill in the book and vibe fields.'); return; }
-  if(vibe.split(' ').length<4){ alert('Give us a real sentence about the vibe!'); return; }
+  if(!book||!author){ alert('Please enter the book title and author.'); return; }
+  if(!vibe||vibe.trim().length<80){ alert('Please write a fuller response — aim for 4–5 sentences covering what you liked, what surprised you, and what you\'re unsure about.'); return; }
+  if(!pageStart||!pageEnd){ alert('Please enter your start and end page numbers.'); return; }
+  if(pageEnd<=pageStart){ alert('End page must be greater than start page.'); return; }
   const btn=document.getElementById('ci-submit');
   if(btn){ btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Posting...'; }
-  const post={email:state.currentUser.email,name:state.currentUser.name,book,vibe,page:page||'',mood,date:new Date().toISOString()};
+  const pagesRead=pageEnd-pageStart;
+  const post={email:state.currentUser.email,name:state.currentUser.name,book,author,vibe,pageStart,pageEnd,pagesRead,mood,date:new Date().toISOString()};
   await dbPush('posts',post);
   await dbUpdate('students/'+emailKey(state.currentUser.email),{lastCheckin:post.date,name:state.currentUser.name});
-  const q=await callClaude(
-    'A rising 8th grader posted:\nBook: '+book+'\nVibe: "'+vibe+'"\nMood: '+mood+'\nLocation: '+page+'\n\nWrite ONE specific follow-up question (1-2 sentences) that only someone who actually read this section could answer. Be curious and personal, not quiz-like. Just the question.',
-    'You are a warm middle school English teacher.'
-  );
+  const bloomPrompt='A rising 8th grader submitted this reading response for "'+book+'" by '+author+', pages '+pageStart+'-'+pageEnd+':\n\n'+vibe+'\n\nYour job: generate ONE follow-up question using this two-step process:\n\nSTEP 1 - Assess quality:\n- VAGUE: generic statements, plot summary only, no personal reaction, fewer than 3 of the 5 prompts addressed (liked / unsure / surprised / whats happening / overall feeling)\n- SUBSTANTIVE: specific textual details, genuine personal reaction, addresses most prompts with real thought\n\nSTEP 2 - Choose your question type:\n- If VAGUE: push for specificity. Ask them to name a specific moment, line, character action, or detail. e.g. You said you liked it - what specific moment made you feel that, and why did it stand out?\n- If SUBSTANTIVE: ask a question one level up Blooms Taxonomy. Describing or remembering -> ask to analyze. Analyzing -> ask to evaluate or judge. Evaluating -> ask to connect or create. e.g. What do you think the author is trying to say about the theme they mentioned? or If you were this character would you have made the same choice, and what does your answer say about the books values?\n\nWrite ONLY the question. No preamble, no label, no explanation. 1-3 sentences. Be warm and genuinely curious, not test-like.';
+  const q=await callClaude(bloomPrompt,'You are an experienced middle school English teacher skilled in Blooms Taxonomy who runs Socratic seminars. Push students toward deeper thinking without making them feel interrogated.');
   if(q) await dbSet('followups/'+emailKey(state.currentUser.email),{question:q.trim(),answered:false,answer:null,postDate:post.date});
   setTab('wall');
 };
@@ -455,14 +461,33 @@ window._importRoster = async function(){
 };
 
 window._exportCSV = function(){
-  const rows=[['Name','Email','Last Check-in','Status','Posts','Follow-up answered']];
-  Object.keys(state.students).forEach(email=>{
-    const s=state.students[email];
-    const posts=state.posts.filter(p=>p.email===email).length;
-    const fu=state.followups[emailKey(email)];
-    rows.push([s.name||email,email,s.lastCheckin?fmt(s.lastCheckin):'Never',getStatus(s),posts,fu?(fu.answered?'Yes':'No'):'N/A']);
+  // Sheet 1: one row per post
+  const postRows=[['Student Name','Email','Date','Book Title','Author','Start Page','End Page','Pages Read','Vibe','Mood','Follow-up Question','Follow-up Answered','Follow-up Response']];
+  const sortedPosts=[...state.posts].sort((a,b)=>a.email.localeCompare(b.email)||new Date(a.date)-new Date(b.date));
+  sortedPosts.forEach(p=>{
+    const fu=state.followups[emailKey(p.email)];
+    const fuForPost=fu&&fu.postDate===p.date?fu:null;
+    postRows.push([
+      p.name||p.email, p.email, fmt(p.date),
+      p.book||'', p.author||'',
+      p.pageStart||'', p.pageEnd||'', p.pagesRead||'',
+      p.vibe||'', p.mood||'',
+      fuForPost?fuForPost.question:'',
+      fuForPost?(fuForPost.answered?'Yes':'No'):'',
+      fuForPost&&fuForPost.answered?fuForPost.answer:''
+    ]);
   });
-  const csv=rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  // Sheet 2: one row per student summary
+  const summaryRows=[['',''],['STUDENT SUMMARY',''],['Name','Email','Status','Total Posts','Total Pages Read','Last Check-in','Follow-up Complete']];
+  Object.keys(state.students).sort().forEach(email=>{
+    const s=state.students[email];
+    const posts=state.posts.filter(p=>p.email===email);
+    const totalPages=posts.reduce((sum,p)=>sum+(p.pagesRead||0),0);
+    const fu=state.followups[emailKey(email)];
+    summaryRows.push([s.name||email,email,getStatus(s),posts.length,totalPages,s.lastCheckin?fmt(s.lastCheckin):'Never',fu?(fu.answered?'Yes':'No'):'N/A']);
+  });
+  const allRows=[...postRows,...summaryRows];
+  const csv=allRows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='summer_reading_tracker.csv';
