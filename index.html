@@ -101,7 +101,6 @@ const FIREBASE_CONFIG = {
   appId: "1:273653133994:web:f24aa3df0620e20ef956d3"
 };
 
-const ANTHROPIC_KEY = "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";
 const TEACHER_PASS = "powers2026";
 
 const fbApp = initializeApp(FIREBASE_CONFIG);
@@ -154,9 +153,9 @@ async function dbPush(path,val){ await push(ref(db,path),val); }
 
 async function callClaude(prompt,system){
   try {
-    const r=await fetch('https://api.anthropic.com/v1/messages',{
+    const r=await fetch('https://nichols-reading-proxy.gpowers.workers.dev',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_KEY,'anthropic-version':'2023-06-01'},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:300,system:system||'You are a warm middle school English teacher.',messages:[{role:'user',content:prompt}]})
     });
     const d=await r.json();
