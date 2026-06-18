@@ -181,9 +181,9 @@ function renderWall(){
   }
   const cards=state.posts.length
     ? state.posts.map(p=>{
-        const spineClass=p.mood==='absorbed'?'spine-absorbed':p.mood==='pushing'?'spine-pushing':'spine-switching';
-        const pillClass=p.mood==='absorbed'?'mood-absorbed':p.mood==='pushing'?'mood-pushing':'mood-switching';
-        const pillLabel=p.mood==='absorbed'?'📖 Absorbed':p.mood==='pushing'?'😐 Pushing through':'🔄 About to switch';
+        const spineClass=p.mood==='love'?'spine-absorbed':p.mood==='good'?'spine-absorbed':p.mood==='ok'?'spine-pushing':'spine-switching';
+        const pillClass=p.mood==='love'?'mood-absorbed':p.mood==='good'?'mood-absorbed':p.mood==='ok'?'mood-pushing':'mood-switching';
+        const pillLabel=p.mood==='love'?'🔥 Love it!':p.mood==='good'?'😄 It\'s good':p.mood==='ok'?'😐 It\'s ok':'💤 Need a new book';
         return '<div class="card" style="padding-left:1.5rem">'
           +'<div class="card-spine '+spineClass+'"></div>'
           +'<div class="post-name">'+esc(p.name)+'</div>'
@@ -234,9 +234,10 @@ function renderCheckin(){
       +'</div>'
       +'<div class="form-group"><label>Reading mood</label>'
       +'<select id="ci-mood">'
-      +'<option value="absorbed">📖 Absorbed — totally into it</option>'
-      +'<option value="pushing">😐 Pushing through — it\'s okay</option>'
-      +'<option value="switching">🔄 About to switch — not working for me</option>'
+      +'<option value="love">🔥 Love it! Can\'t put it down.</option>'
+      +'<option value="good">😄 It\'s good, I want to read it.</option>'
+      +'<option value="ok">😐 It\'s ok, but I drift a little or have to be reminded.</option>'
+      +'<option value="boring">💤 It\'s really boring, I need a new book.</option>'
       +'</select></div>'
       +'<button class="btn btn-primary" id="ci-submit" onclick="window._submitCheckin()">Post to the wall</button>'
       +'</div>';
