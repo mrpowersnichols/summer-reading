@@ -473,14 +473,16 @@ window._submitCheckin = async function(){
     state.pendingFollowup={question:q.trim(),email:state.currentUser.email};
   }
   // Check if journal entry is due (every 2 posts)
-  const allStudentPosts=state.posts.filter(p=>p.email===state.currentUser.email);
-  const studentPostCount=allStudentPosts.length+1;
+  // Re-fetch posts from Firebase to get accurate count including the one just submitted
   const journalKey=emailKey(state.currentUser.email);
+  const freshSnap=await get(ref(db,'posts'));
+  const allPosts=freshSnap.exists()?Object.values(freshSnap.val()):[];
+  const allStudentPosts=allPosts.filter(p=>p.email===state.currentUser.email);
   const journalMsgs=state.journals[journalKey]?Object.values(state.journals[journalKey]):[];
   const studentJournalMsgs=journalMsgs.filter(m=>m.role==='student');
   const lastJournalDate=studentJournalMsgs.length?Math.max(...studentJournalMsgs.map(m=>new Date(m.date).getTime())):0;
-  const postsSinceJournal=allStudentPosts.filter(p=>new Date(p.date).getTime()>lastJournalDate).length+1;
-  const isDue = postsSinceJournal>=2;
+  const postsSinceJournal=allStudentPosts.filter(p=>new Date(p.date).getTime()>lastJournalDate).length;
+  const isDue = postsSinceJournal>0 && postsSinceJournal%2===0;
   state.journalDue = isDue;
   // Persist journalDue to Firebase so it shows on next visit
   await dbUpdate('students/'+journalKey,{journalDue:isDue});
