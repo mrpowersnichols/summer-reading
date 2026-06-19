@@ -153,15 +153,31 @@ function startListeners(){
     Object.entries(raw).forEach(([k,v])=>{ state.students[keyToEmail(k)]={...v,email:keyToEmail(k)}; });
     if(state.tab==='teacher') renderMain();
   });
+  // Listen to journals globally for teacher dashboard
   onValue(ref(db,'journals'), snap=>{
-    state.journals=snap.val()||{};
+    const raw=snap.val()||{};
+    // Only expose current user's own journal to state — teacher sees all via dashboard
+    if(state.currentUser){
+      const key=emailKey(state.currentUser.email);
+      state.journals={};
+      if(raw[key]) state.journals[key]=raw[key];
+    } else {
+      state.journals=raw;
+    }
     // Re-check unread replies when journal data updates
     if(state.currentUser&&state.tab!=='journal'){
       checkUnreadReply(state.currentUser.email).then(()=>renderMain());
     } else if(state.tab==='journal'||state.viewingStudent) renderMain();
   });
   onValue(ref(db,'followups'), snap=>{
-    state.followups=snap.val()||{};
+    const raw=snap.val()||{};
+    if(state.currentUser){
+      const key=emailKey(state.currentUser.email);
+      state.followups={};
+      if(raw[key]) state.followups[key]=raw[key];
+    } else {
+      state.followups=raw;
+    }
     if(state.tab==='checkin'||state.tab==='teacher'||state.viewingStudent) renderMain();
   });
 }
@@ -430,6 +446,12 @@ window._signIn = async function(){
   const name=document.getElementById('fi-name')?.value.trim();
   const email=document.getElementById('fi-email')?.value.trim().toLowerCase();
   if(!name||!email||!email.includes('@')){ alert('Please enter your name and a valid email.'); return; }
+  // Reset per-user state before switching accounts
+  state.journals={};
+  state.followups={};
+  state.pendingFollowup=null;
+  state.journalDue=false;
+  state.hasUnreadReply=false;
   state.currentUser={name,email};
   localStorage.setItem('sr_user',JSON.stringify(state.currentUser));
   const key=emailKey(email);
@@ -446,7 +468,16 @@ window._signIn = async function(){
   render();
 };
 
-window._signOut = function(){ state.currentUser=null; localStorage.removeItem('sr_user'); render(); };
+window._signOut = function(){
+  state.currentUser=null;
+  state.journals={};
+  state.followups={};
+  state.pendingFollowup=null;
+  state.journalDue=false;
+  state.hasUnreadReply=false;
+  localStorage.removeItem('sr_user');
+  render();
+};
 
 window._submitCheckin = async function(){
   const book=document.getElementById('ci-book')?.value.trim();
